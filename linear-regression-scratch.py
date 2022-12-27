@@ -10,10 +10,10 @@ DEBUG = False
 # generate training data from a source w,b
 num_examples = 1000
 source_weight = torch.tensor([2, -3.4])
-source_bais = 4.2
+source_bias = 4.2
 
 print(f'>> Source weight: {source_weight}')
-print(f'>> Source bais: {source_bais}')
+print(f'>> Source bias: {source_bias}')
 
 
 def generate_simuliation_data(src_w: torch.Tensor, src_b: float, num: int):
@@ -54,7 +54,7 @@ def generate_simuliation_data(src_w: torch.Tensor, src_b: float, num: int):
 
 
 # generate the X and y for training simulation from source
-features, labels = generate_simuliation_data(source_weight, source_bais, num_examples)
+features, labels = generate_simuliation_data(source_weight, source_bias, num_examples)
 
 if (DEBUG): print(f'>> Generated training data: \n>> Features {features}\n>> Labels:{labels}')
 
@@ -78,7 +78,7 @@ def random_shuffle_iter_data(batch_size, features, labels):
 
 
 # here is batch concept demo
-batch_size = 2
+batch_size = 10
 # random features, labels to a batch iteration
 iter_data = random_shuffle_iter_data(batch_size, features, labels)
 for idx, (X, y) in enumerate(iter_data):
@@ -111,10 +111,10 @@ def sgd(params: tuple[torch.Tensor], lr: float, batch_size: int):
 
 # the initial value of a training w, b
 weight = torch.normal(0, 0.01, size=(2, 1), requires_grad=True)
-bais = torch.zeros(1, requires_grad=True)
+bias = torch.zeros(1, requires_grad=True)
 
 print(f'>> Initialized weight: {weight}')
-print(f'>> Initialized bais: {bais}')
+print(f'>> Initialized bias: {bias}')
 
 batch_size = 10
 lr = 0.03
@@ -123,19 +123,27 @@ network = linreg
 loss = squared_loss
 optimize = sgd
 
+
+with torch.no_grad():
+    train_loss = loss(network(features, weight, bias), labels)
+    print(f'>> Initial loss {float(train_loss.mean()):f}')
+
+print(f'>> Initial difference weight: {source_weight - weight.reshape(source_weight.shape)}')
+print(f'>> Initial difference bias: {source_bias - bias}')    
+
 for epoch in range(num_epochs):
     for X, y in random_shuffle_iter_data(batch_size, features, labels):
-        batch_loss = loss(network(X, weight, bais), y)  # X和y的小批次損失
+        batch_loss = loss(network(X, weight, bias), y)  # X和y的小批次損失
         # 因為l形狀是(batch_size,1)，而不是一個標量。
         # l中的所有元素被加到一起，
         # 並以此計算關於[w,b]的梯度
 
         # backpropagation
         batch_loss.sum().backward()
-        optimize([weight, bais], lr, batch_size)  # 使用參數的梯度更新參數
+        optimize([weight, bias], lr, batch_size)  # 使用參數的梯度更新參數
     with torch.no_grad():
-        train_loss = loss(network(features, weight, bais), labels)
+        train_loss = loss(network(features, weight, bias), labels)
         print(f'epoch {epoch + 1}, loss {float(train_loss.mean()):f}')
 
 print(f'>> weight difference from source: {source_weight - weight.reshape(source_weight.shape)}')
-print(f'>> bais difference from source: {source_bais - bais}')
+print(f'>> bias difference from source: {source_bias - bias}')
