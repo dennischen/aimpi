@@ -123,13 +123,12 @@ network = linreg
 loss = squared_loss
 optimize = sgd
 
-
 with torch.no_grad():
     train_loss = loss(network(features, weight, bias), labels)
     print(f'>> Initial loss {float(train_loss.mean()):f}')
 
 print(f'>> Initial difference weight: {source_weight - weight.reshape(source_weight.shape)}')
-print(f'>> Initial difference bias: {source_bias - bias}')    
+print(f'>> Initial difference bias: {source_bias - bias}')
 
 for epoch in range(num_epochs):
     for X, y in random_shuffle_iter_data(batch_size, features, labels):
