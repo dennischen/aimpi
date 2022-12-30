@@ -1,9 +1,11 @@
 import os
-from typing import Callable, Union
+from typing import Callable
 
 import matplotlib.pyplot as plt
+import numpy
 import torch
 import torchvision
+from matplotlib.axes import Axes
 from torch.utils import data
 from torchvision import transforms
 
@@ -192,3 +194,42 @@ def train(net: torch.nn.Module, train_dataloader: data.DataLoader, test_dataload
     assert train_loss < 0.5, train_loss
     assert train_acc <= 1 and train_acc > 0.7, train_acc
     assert test_acc <= 1 and test_acc > 0.7, test_acc
+
+
+def show_images(imgs: torch.Tensor, num_rows: int, num_cols: int, titles: tuple[str] = None, scale=1.5):
+    """繪製圖像列表"""
+    figsize = (num_cols * scale, (num_rows + 1) * scale)
+    axes_arr: numpy.ndarray[Axes]
+    _, axes_arr = plt.subplots(num_rows, num_cols, figsize=figsize)
+    axes_arr = axes_arr.flatten()
+    axes: Axes
+    for i, (axes, img) in enumerate(zip(axes_arr, imgs)):
+        if torch.is_tensor(img):
+            pixels = img.numpy()  # (28, 28)
+            axes.imshow(pixels)
+        else:
+            # PIL圖片
+            axes.imshow(img)
+        axes.axes.get_xaxis().set_visible(False)
+        axes.axes.get_yaxis().set_visible(False)
+        if titles:
+            axes.set_title(titles[i])
+            print(f'>>{titles[i]}<<')
+    return axes_arr
+
+
+def predict(net: torch.nn.Module, test_dataloader: data.DataLoader, number=8):
+    """預測標籤"""
+    X: torch.Tensor
+    y: torch.Tensor
+    X, y = next(iter(test_dataloader))
+    labels = get_fashion_mnist_labels(y)
+    t: torch.Tensor = net(X)
+    preds = get_fashion_mnist_labels(t.argmax(axis=1))
+    titles = [label + '\n' + pred for label, pred in zip(labels, preds)]
+    show_images(X[0:number].reshape((number, 28, 28)), 1, number, titles=titles[0:number])
+    
+
+
+def savefig(path: str):
+    plt.savefig(path)

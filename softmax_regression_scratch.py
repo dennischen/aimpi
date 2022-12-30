@@ -229,7 +229,7 @@ def train(net: Union[Callable[[torch.Tensor], torch.Tensor], torch.nn.Module], t
 num_epochs = 10
 train(net, train_dataloader, test_dataloader, cross_entropy, num_epochs, updater)
 
-plt.savefig(f'out/{basename_noext(__file__)}_training.png')
+plt.savefig(f'out/{basename_noext(__file__)}_train.png')
 
 
 def show_images(imgs: torch.Tensor, num_rows: int, num_cols: int, titles: tuple[str] = None, scale=1.5):

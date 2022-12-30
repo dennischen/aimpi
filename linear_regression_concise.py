@@ -95,7 +95,6 @@ for epoch in range(num_epochs):
         # ==the concise way==
         optim.zero_grad()
         batch_loss: torch.Tensor = loss(net(X), y)
-        # l = loss.forward(net.forward(X) ,y) # net.forward(X) is same as net(X)
         batch_loss.backward()
         optim.step()
     with torch.no_grad():
