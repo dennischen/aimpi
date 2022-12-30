@@ -1,18 +1,14 @@
-import math
-import multiprocessing
 from typing import Callable, Union
 
 import matplotlib.pyplot as plt
 import numpy
 import torch
-import torchvision
 from d2l import torch as d2l
-from matplotlib.axes import Axes, Subplot
-from matplotlib.figure import Figure, FigureBase, figaspect
+from matplotlib.axes import Axes
 from torch.utils import data
-from torchvision import transforms
 
 from utils import (basename_noext, get_fashion_mnist_labels, kmp_duplicate_lib_ok, load_data_fashion_minist)
+
 
 kmp_duplicate_lib_ok()
 
@@ -21,8 +17,8 @@ lr = 0.1
 
 train_dataloader, test_dataloader = load_data_fashion_minist(batch_size)
 
-num_inputs = 784
-num_outputs = 10
+num_inputs = 784  # 28 x 28
+num_outputs = 10  # 10 category
 
 W = torch.normal(0, 0.01, size=(num_inputs, num_outputs), requires_grad=True)
 b = torch.zeros(num_outputs, requires_grad=True)
@@ -121,7 +117,7 @@ test_evaluate_accuracy()
 
 
 def train_epoch(net: Union[Callable[[torch.Tensor], torch.Tensor], torch.nn.Module], dataloader: data.DataLoader,
-                loss: Callable[[torch.Tensor, torch.Tensor], torch.Tensor], updater: Union[Callable[[float, int], None],
+                loss: Callable[[torch.Tensor, torch.Tensor], torch.Tensor], trainer: Union[Callable[[float, int], None],
                                                                                            torch.optim.Optimizer]):
     """訓練模型一個迭代週期"""
     # 將模型設定為訓練模式
@@ -135,15 +131,15 @@ def train_epoch(net: Union[Callable[[torch.Tensor], torch.Tensor], torch.nn.Modu
         # 計算梯度並更新參數
         y_hat = net(X)
         lo = loss(y_hat, y)
-        if isinstance(updater, torch.optim.Optimizer):
+        if isinstance(trainer, torch.optim.Optimizer):
             # 使用PyTorch內建的最佳化器和損失函數
-            updater.zero_grad()
+            trainer.zero_grad()
             lo.mean().backward()
-            updater.step()
+            trainer.step()
         else:
             # 使用定製的最佳化器和損失函數
             lo.sum().backward()
-            updater(X.shape[0])
+            trainer(X.shape[0])
         metric.add(float(lo.sum()), count_accuracy(y_hat, y), y.numel())
     # 返回訓練損失和訓練精度
     return metric[0] / metric[2], metric[1] / metric[2]
@@ -209,14 +205,14 @@ class Animator:
 
 def train(net: Union[Callable[[torch.Tensor], torch.Tensor], torch.nn.Module], train_dataloader: data.DataLoader,
           test_dataloader: data.DataLoader, loss: Callable[[torch.Tensor, torch.Tensor], torch.Tensor], num_epochs: int,
-          updater: Union[Callable[[float, int], None], torch.optim.Optimizer]):
+          trainer: Union[Callable[[float, int], None], torch.optim.Optimizer]):
     """訓練模型"""
     animator = Animator(xlabel='epoch',
                         xlim=[1, num_epochs],
                         ylim=[0.3, 0.9],
                         legend=['train loss', 'train acc', 'test acc'])
     for epoch in range(num_epochs):
-        train_metrics = train_epoch(net, train_dataloader, loss, updater)
+        train_metrics = train_epoch(net, train_dataloader, loss, trainer)
         test_acc = evaluate_accuracy(net, test_dataloader)
         animator.add(epoch + 1, train_metrics + (test_acc, ))
         train_loss, train_acc = train_metrics
