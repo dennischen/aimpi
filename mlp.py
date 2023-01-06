@@ -1,6 +1,6 @@
 import torch
 from d2l import torch as d2l
-from utils import (basename_noext, get_fashion_mnist_labels, kmp_duplicate_lib_ok, load_data_fashion_minist, train,
+from utils import (basename_noext, get_fashion_mnist_labels, kmp_duplicate_lib_ok, load_data_fashion_minist, train_ani,
                    predict, savefig)
 
 kmp_duplicate_lib_ok()

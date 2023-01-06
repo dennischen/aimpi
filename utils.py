@@ -35,6 +35,14 @@ def get_fashion_mnist_labels(labels):
     return [text_labels[int(i)] for i in labels]
 
 
+def load_data(data_arrays: torch.Tensor, batch_size: int, is_train=True):
+    """Construct a PyTorch data iterator.
+
+    Defined in :numref:`sec_utils`"""
+    dataset = data.TensorDataset(*data_arrays)
+    return data.DataLoader(dataset, batch_size, shuffle=is_train)
+
+
 class Accumulator:
     """在n個變數上累加"""
     def __init__(self, n):
@@ -109,6 +117,33 @@ def train_epoch(net: Union[Callable[[torch.Tensor], torch.Tensor], torch.nn.Modu
     return metric[0] / metric[2], metric[1] / metric[2]
 
 
+def train_ani(net: torch.nn.Module,
+            train_dataloader: data.DataLoader,
+            test_dataloader: data.DataLoader,
+            loss: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
+            num_epochs: int,
+            trainer: torch.optim.Optimizer,
+            device="cpu"):
+    """訓練模型"""
+    animator = Animator(xlabel='epoch',
+                        xlim=[1, num_epochs],
+                        ylim=[0.3, 0.9],
+                        legend=['train loss', 'train acc', 'test acc'])
+    for epoch in range(num_epochs):
+        train_metrics = train_epoch(net, train_dataloader, loss, trainer, device)
+        test_acc = evaluate_accuracy(net, test_dataloader, device)
+        animator.add(epoch + 1, train_metrics + (test_acc, ))
+        train_loss, train_acc = train_metrics
+        print(f'Train loss in {epoch} = {train_loss:.3f}')
+        print(f'Train accuarcy in {epoch} = {train_acc:.3f}')
+        print(f'Test accuarcy in {epoch} = {test_acc:.3f}')
+
+    train_loss, train_acc = train_metrics
+    assert train_loss < 0.5, train_loss
+    assert train_acc <= 1 and train_acc > 0.7, train_acc
+    assert test_acc <= 1 and test_acc > 0.7, test_acc
+
+
 def set_axes(axes, xlabel, ylabel, xlim, ylim, xscale, yscale, legend):
     """Set the axes for matplotlib.
 
@@ -173,33 +208,6 @@ class Animator:
         self.axes[0].relim()  # recompute the data limits
         self.axes[0].autoscale_view()  # automatic axis scaling
         self.fig.canvas.flush_events()
-
-
-def train(net: torch.nn.Module,
-          train_dataloader: data.DataLoader,
-          test_dataloader: data.DataLoader,
-          loss: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
-          num_epochs: int,
-          trainer: torch.optim.Optimizer,
-          device="cpu"):
-    """訓練模型"""
-    animator = Animator(xlabel='epoch',
-                        xlim=[1, num_epochs],
-                        ylim=[0.3, 0.9],
-                        legend=['train loss', 'train acc', 'test acc'])
-    for epoch in range(num_epochs):
-        train_metrics = train_epoch(net, train_dataloader, loss, trainer, device)
-        test_acc = evaluate_accuracy(net, test_dataloader, device)
-        animator.add(epoch + 1, train_metrics + (test_acc, ))
-        train_loss, train_acc = train_metrics
-        print(f'Train loss in {epoch} = {train_loss:.3f}')
-        print(f'Train accuarcy in {epoch} = {train_acc:.3f}')
-        print(f'Test accuarcy in {epoch} = {test_acc:.3f}')
-
-    train_loss, train_acc = train_metrics
-    assert train_loss < 0.5, train_loss
-    assert train_acc <= 1 and train_acc > 0.7, train_acc
-    assert test_acc <= 1 and test_acc > 0.7, test_acc
 
 
 def show_images(imgs: torch.Tensor, num_rows: int, num_cols: int, titles: tuple[str] = None, scale=1.5):

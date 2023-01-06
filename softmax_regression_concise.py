@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from utils import (basename_noext, get_fashion_mnist_labels,
                    kmp_duplicate_lib_ok, load_data_fashion_minist, predict,
-                   savefig, train)
+                   savefig, train_ani)
 
 kmp_duplicate_lib_ok()
 
@@ -28,7 +28,7 @@ loss = nn.CrossEntropyLoss(reduction='none')
 
 trainer = torch.optim.SGD(net.parameters(), lr=lr)
 
-train(net, train_dataloader, test_dataloader, loss, num_epochs, trainer)
+train_ani(net, train_dataloader, test_dataloader, loss, num_epochs, trainer)
 
 savefig(f'out/{basename_noext(__file__)}_train.png')
 
