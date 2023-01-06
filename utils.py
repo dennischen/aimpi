@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy
 import torch
 import torchvision
+import torch.nn as nn
 from matplotlib.axes import Axes
 from torch.utils import data
 from torchvision import transforms
@@ -43,8 +44,8 @@ def squared_loss(y_hat: torch.Tensor, y: torch.Tensor):
     return (y_hat - torch.reshape(y, y_hat.shape))**2 / 2
 
 
-def evaluate_loss(net: torch.nn.Module, dataloader: data.DataLoader, loss: Callable[[torch.Tensor, torch.Tensor],
-                                                                                    torch.Tensor]):
+def evaluate_loss(net: nn.Module, dataloader: data.DataLoader, loss: Callable[[torch.Tensor, torch.Tensor],
+                                                                              torch.Tensor]):
     """Evaluate the loss of a model on the given dataset.
 
     Defined in :numref:`sec_utils`"""
@@ -116,11 +117,11 @@ def count_accuracy(y_hat: torch.Tensor, y: torch.Tensor):
     return float(cmp.type(y.dtype).sum())
 
 
-def evaluate_accuracy(net: Union[Callable[[torch.Tensor], torch.Tensor], torch.nn.Module],
+def evaluate_accuracy(net: Union[Callable[[torch.Tensor], torch.Tensor], nn.Module],
                       dataloader: data.DataLoader,
                       device="cpu"):
     """計算在指定資料集上模型的精度"""
-    if isinstance(net, torch.nn.Module):
+    if isinstance(net, nn.Module):
         net.eval()  # 將模型設定為評估模式
     metric = Accumulator(2)  # 正確預測數、預測總數
     with torch.no_grad():
@@ -133,14 +134,14 @@ def evaluate_accuracy(net: Union[Callable[[torch.Tensor], torch.Tensor], torch.n
     return metric[0] / metric[1]
 
 
-def train_epoch(net: Union[Callable[[torch.Tensor], torch.Tensor], torch.nn.Module],
+def train_epoch(net: Union[Callable[[torch.Tensor], torch.Tensor], nn.Module],
                 dataloader: data.DataLoader,
                 loss: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
                 trainer: Union[Callable[[float, int], None], torch.optim.Optimizer],
                 device="cpu"):
     """訓練模型一個迭代週期"""
     # 將模型設定為訓練模式
-    if isinstance(net, torch.nn.Module):
+    if isinstance(net, nn.Module):
         net.train()
     # 訓練損失總和、訓練精準度總和、樣本數
     metric = Accumulator(3)
@@ -167,7 +168,7 @@ def train_epoch(net: Union[Callable[[torch.Tensor], torch.Tensor], torch.nn.Modu
     return metric[0] / metric[2], metric[1] / metric[2]
 
 
-def train_ani(net: torch.nn.Module,
+def train_ani(net: nn.Module,
               train_dataloader: data.DataLoader,
               test_dataloader: data.DataLoader,
               loss: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
@@ -194,7 +195,7 @@ def train_ani(net: torch.nn.Module,
     assert test_acc <= 1 and test_acc > 0.7, test_acc
 
 
-def set_axes(axes, xlabel, ylabel, xlim, ylim, xscale, yscale, legend):
+def set_axes(axes: Axes, xlabel, ylabel, xlim, ylim, xscale, yscale, legend):
     """Set the axes for matplotlib.
 
     Defined in :numref:`sec_calculus`"""
@@ -285,7 +286,51 @@ def show_images(imgs: torch.Tensor, num_rows: int, num_cols: int, titles: tuple[
     return axes_arr
 
 
-def predict(net: torch.nn.Module, test_dataloader: data.DataLoader, number=10, device="cpu"):
+def set_figsize(figsize=(3.5, 2.5)):
+    """Set the figure size for matplotlib.
+
+    Defined in :numref:`sec_calculus`"""
+    plt.rcParams['figure.figsize'] = figsize
+
+
+def plot(X: torch.Tensor,
+         Y: torch.Tensor = None,
+         xlabel=None,
+         ylabel=None,
+         legend=[],
+         xlim=None,
+         ylim=None,
+         xscale='linear',
+         yscale='linear',
+         fmts=('-', 'm--', 'g-.', 'r:'),
+         figsize=(3.5, 2.5),
+         axes: Axes = None):
+    """Plot data points.
+
+    Defined in :numref:`sec_calculus`"""
+    def has_one_axis(X: torch.Tensor):  # True if `X` (tensor or list) has 1 axis
+        return (hasattr(X, "ndim") and X.ndim == 1 or isinstance(X, list) and not hasattr(X[0], "__len__"))
+
+    if has_one_axis(X): X = [X]
+    if Y is None:
+        X, Y = [[]] * len(X), X
+    elif has_one_axis(Y):
+        Y = [Y]
+    if len(X) != len(Y):
+        X = X * len(Y)
+
+    set_figsize(figsize)
+
+    if axes is None: axes = plt.gca()
+    axes.cla()
+    for x, y, fmt in zip(X, Y, fmts):
+        axes.plot(x, y, fmt) if len(x) else axes.plot(y, fmt)
+    set_axes(axes, xlabel, ylabel, xlim, ylim, xscale, yscale, legend)
+
+    
+
+
+def predict(net: nn.Module, test_dataloader: data.DataLoader, number=10, device="cpu"):
     """預測標籤"""
     X: torch.Tensor
     y: torch.Tensor
