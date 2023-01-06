@@ -14,6 +14,7 @@ kmp_duplicate_lib_ok()
 
 batch_size = 256
 lr = 0.1
+num_epochs = 10
 
 train_dataloader, test_dataloader = load_data_fashion_minist(batch_size)
 
@@ -226,7 +227,6 @@ def train(net: Union[Callable[[torch.Tensor], torch.Tensor], torch.nn.Module], t
     assert test_acc <= 1 and test_acc > 0.7, test_acc
 
 
-num_epochs = 10
 train(net, train_dataloader, test_dataloader, cross_entropy, num_epochs, updater)
 
 plt.savefig(f'out/{basename_noext(__file__)}_train.png')

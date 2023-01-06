@@ -1,5 +1,6 @@
+import math
 import os
-from typing import Callable
+from typing import Callable, Union
 
 import matplotlib.pyplot as plt
 import numpy
@@ -57,35 +58,28 @@ def count_accuracy(y_hat: torch.Tensor, y: torch.Tensor):
     return float(cmp.type(y.dtype).sum())
 
 
-class Accumulator:
-    """在n個變數上累加"""
-    def __init__(self, n):
-        self.data = [0.0] * n
-
-    def add(self, *args):
-        self.data = [a + float(b) for a, b in zip(self.data, args)]
-
-    def reset(self):
-        self.data = [0.0] * len(self.data)
-
-    def __getitem__(self, idx):
-        return self.data[idx]
-
-
-def evaluate_accuracy(net: torch.nn.Module, dataloader: data.DataLoader):
+def evaluate_accuracy(net: Union[Callable[[torch.Tensor], torch.Tensor], torch.nn.Module],
+                      dataloader: data.DataLoader,
+                      device="cpu"):
     """計算在指定資料集上模型的精度"""
-    net.eval()  # 將模型設定為評估模式
+    if isinstance(net, torch.nn.Module):
+        net.eval()  # 將模型設定為評估模式
     metric = Accumulator(2)  # 正確預測數、預測總數
     with torch.no_grad():
         X: torch.Tensor
         y: torch.Tensor
         for X, y in dataloader:
+            X = X.to(device)
+            y = y.to(device)
             metric.add(count_accuracy(net(X), y), y.numel())
     return metric[0] / metric[1]
 
 
-def train_epoch(net: torch.nn.Module, dataloader: data.DataLoader,
-                loss: Callable[[torch.Tensor, torch.Tensor], torch.Tensor], trainer: torch.optim.Optimizer):
+def train_epoch(net: Union[Callable[[torch.Tensor], torch.Tensor], torch.nn.Module],
+                dataloader: data.DataLoader,
+                loss: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
+                trainer: Union[Callable[[float, int], None], torch.optim.Optimizer],
+                device="cpu"):
     """訓練模型一個迭代週期"""
     # 將模型設定為訓練模式
     if isinstance(net, torch.nn.Module):
@@ -96,13 +90,20 @@ def train_epoch(net: torch.nn.Module, dataloader: data.DataLoader,
     y: torch.Tensor
     for X, y in dataloader:
         # 計算梯度並更新參數
+        X = X.to(device)
+        y = y.to(device)
+
         y_hat = net(X)
         lo = loss(y_hat, y)
-
-        # 使用PyTorch內建的最佳化器和損失函數
-        trainer.zero_grad()
-        lo.mean().backward()
-        trainer.step()
+        if isinstance(trainer, torch.optim.Optimizer):
+            # 使用PyTorch內建的最佳化器和損失函數
+            trainer.zero_grad()
+            lo.mean().backward()
+            trainer.step()
+        else:
+            # 使用定製的最佳化器和損失函數
+            lo.sum().backward()
+            trainer(X.shape[0])
         metric.add(float(lo.sum()), count_accuracy(y_hat, y), y.numel())
     # 返回訓練損失和訓練精度
     return metric[0] / metric[2], metric[1] / metric[2]
@@ -174,16 +175,21 @@ class Animator:
         self.fig.canvas.flush_events()
 
 
-def train(net: torch.nn.Module, train_dataloader: data.DataLoader, test_dataloader: data.DataLoader,
-          loss: Callable[[torch.Tensor, torch.Tensor], torch.Tensor], num_epochs: int, trainer: torch.optim.Optimizer):
+def train(net: torch.nn.Module,
+          train_dataloader: data.DataLoader,
+          test_dataloader: data.DataLoader,
+          loss: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
+          num_epochs: int,
+          trainer: torch.optim.Optimizer,
+          device="cpu"):
     """訓練模型"""
     animator = Animator(xlabel='epoch',
                         xlim=[1, num_epochs],
                         ylim=[0.3, 0.9],
                         legend=['train loss', 'train acc', 'test acc'])
     for epoch in range(num_epochs):
-        train_metrics = train_epoch(net, train_dataloader, loss, trainer)
-        test_acc = evaluate_accuracy(net, test_dataloader)
+        train_metrics = train_epoch(net, train_dataloader, loss, trainer, device)
+        test_acc = evaluate_accuracy(net, test_dataloader, device)
         animator.add(epoch + 1, train_metrics + (test_acc, ))
         train_loss, train_acc = train_metrics
         print(f'Train loss in {epoch} = {train_loss:.3f}')
@@ -203,32 +209,40 @@ def show_images(imgs: torch.Tensor, num_rows: int, num_cols: int, titles: tuple[
     _, axes_arr = plt.subplots(num_rows, num_cols, figsize=figsize)
     axes_arr = axes_arr.flatten()
     axes: Axes
+
+    for axes in axes_arr:
+        axes.axes.get_xaxis().set_visible(False)
+        axes.axes.get_yaxis().set_visible(False)
+
     for i, (axes, img) in enumerate(zip(axes_arr, imgs)):
         if torch.is_tensor(img):
-            pixels = img.numpy()  # (28, 28)
+            # to cpu to use numpy()
+            pixels = img.to("cpu").numpy()  # (28, 28)
             axes.imshow(pixels)
         else:
             # PIL圖片
             axes.imshow(img)
-        axes.axes.get_xaxis().set_visible(False)
-        axes.axes.get_yaxis().set_visible(False)
         if titles:
             axes.set_title(titles[i])
-            print(f'>>{titles[i]}<<')
     return axes_arr
 
 
-def predict(net: torch.nn.Module, test_dataloader: data.DataLoader, number=8):
+def predict(net: torch.nn.Module, test_dataloader: data.DataLoader, number=10, device="cpu"):
     """預測標籤"""
     X: torch.Tensor
     y: torch.Tensor
     X, y = next(iter(test_dataloader))
+    X = X.to(device)
+    y = y.to(device)
+
     labels = get_fashion_mnist_labels(y)
     t: torch.Tensor = net(X)
+
     preds = get_fashion_mnist_labels(t.argmax(axis=1))
     titles = [label + '\n' + pred for label, pred in zip(labels, preds)]
-    show_images(X[0:number].reshape((number, 28, 28)), 1, number, titles=titles[0:number])
-    
+    num_cols = min(10, number)
+    num_rows = math.ceil(number / num_cols)
+    show_images(X[0:number].reshape((number, 28, 28)), num_rows, num_cols, titles=titles[0:number])
 
 
 def savefig(path: str):

@@ -1,20 +1,14 @@
-from typing import Callable, Union
-
 import torch
-from d2l import torch as d2l
-from matplotlib.axes import Axes
 from torch import nn
-from torch.utils import data
-
 from utils import (basename_noext, get_fashion_mnist_labels,
-                   kmp_duplicate_lib_ok, load_data_fashion_minist, train, predict, savefig)
-
-
+                   kmp_duplicate_lib_ok, load_data_fashion_minist, predict,
+                   savefig, train)
 
 kmp_duplicate_lib_ok()
 
 batch_size = 256
 lr = 0.1
+num_epochs = 10
 
 train_dataloader, test_dataloader = load_data_fashion_minist(batch_size)
 
@@ -33,8 +27,6 @@ net.apply(init_linear)
 loss = nn.CrossEntropyLoss(reduction='none')
 
 trainer = torch.optim.SGD(net.parameters(), lr=lr)
-
-num_epochs = 10
 
 train(net, train_dataloader, test_dataloader, loss, num_epochs, trainer)
 
