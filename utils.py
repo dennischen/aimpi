@@ -15,8 +15,58 @@ def kmp_duplicate_lib_ok(on: bool = True):
     os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE" if on else "FALSE"
 
 
-def basename_noext(p):
+def basename_noext(p: str):
     return os.path.splitext(os.path.basename(p))[0]
+
+
+def synthetic_data(w: torch.Tensor, b: torch.Tensor, num_examples: int):
+    """Generate y = Xw + b + noise.
+
+    Defined in :numref:`sec_utils`"""
+    X = torch.normal(0, 1, (num_examples, len(w)))
+    y = torch.matmul(X, w) + b
+    y += torch.normal(0, 0.01, y.shape)
+    return X, torch.reshape(y, (-1, 1))
+
+
+def linreg(X: torch.Tensor, w: torch.Tensor, b: torch.Tensor):
+    """The linear regression model.
+
+    Defined in :numref:`sec_utils`"""
+    return torch.matmul(X, w) + b
+
+
+def squared_loss(y_hat: torch.Tensor, y: torch.Tensor):
+    """Squared loss.
+
+    Defined in :numref:`sec_utils`"""
+    return (y_hat - torch.reshape(y, y_hat.shape))**2 / 2
+
+
+def evaluate_loss(net: torch.nn.Module, dataloader: data.DataLoader, loss: Callable[[torch.Tensor, torch.Tensor],
+                                                                                    torch.Tensor]):
+    """Evaluate the loss of a model on the given dataset.
+
+    Defined in :numref:`sec_utils`"""
+    metric = Accumulator(2)  # Sum of losses, no. of examples
+    X: torch.Tensor
+    y: torch.Tensor
+    for X, y in dataloader:
+        out = net(X)
+        y = torch.reshape(y, out.shape)
+        lo = loss(out, y)
+        metric.add(lo.sum(), lo.numel())
+    return metric[0] / metric[1]
+
+
+def sgd(params: tuple[torch.Tensor], lr: float, batch_size: int):
+    """Minibatch stochastic gradient descent.
+
+    Defined in :numref:`sec_utils`"""
+    with torch.no_grad():
+        for param in params:
+            param -= lr * param.grad / batch_size
+            param.grad.zero_()
 
 
 def load_data_fashion_minist(batch_size: int):
@@ -118,12 +168,12 @@ def train_epoch(net: Union[Callable[[torch.Tensor], torch.Tensor], torch.nn.Modu
 
 
 def train_ani(net: torch.nn.Module,
-            train_dataloader: data.DataLoader,
-            test_dataloader: data.DataLoader,
-            loss: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
-            num_epochs: int,
-            trainer: torch.optim.Optimizer,
-            device="cpu"):
+              train_dataloader: data.DataLoader,
+              test_dataloader: data.DataLoader,
+              loss: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
+              num_epochs: int,
+              trainer: torch.optim.Optimizer,
+              device="cpu"):
     """訓練模型"""
     animator = Animator(xlabel='epoch',
                         xlim=[1, num_epochs],
