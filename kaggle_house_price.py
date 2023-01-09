@@ -217,7 +217,7 @@ def train_and_pred(train_features: torch.Tensor, test_features: torch.Tensor, tr
          xlim=[1, num_epochs],
          yscale='log')
     savefig(f'out/{basename_noext(__file__)}_pred.png')
-    print(f'train log rmse：{float(train_ls[-1]):f}')
+    print(f'train log rmse: {float(train_ls[-1]):f}')
     # 將網路應用於測試集。
     preds = net(test_features).detach().numpy()
     # 將其重新格式化以匯出到Kaggle
