@@ -3,7 +3,7 @@ from torch import nn
 from d2l import torch as d2l
 
 
-def corr2d(X, K):  #@save
+def corr2d(X, K):
     """計算二維互相關運算"""
     h, w = K.shape
     Y = torch.zeros((X.shape[0] - h + 1, X.shape[1] - w + 1))
@@ -24,10 +24,9 @@ K = torch.tensor([[1.0, -1.0]])
 print(K)
 Y = corr2d(X, K)
 print(Y)
-Y = corr2d(X.t(), K)
-print(Y)
+print(corr2d(X.t(), K))
 
-
+# conv2d exmaple
 class Conv2D(nn.Module):
     def __init__(self, kernel_size):
         super().__init__()
@@ -38,24 +37,28 @@ class Conv2D(nn.Module):
         return corr2d(X, self.weight) + self.bias
 
 
+# 構造一個二維摺積層,它具有1個輸出通道和形狀為(1,2)的摺積核
+conv2d = nn.Conv2d(1, 1, kernel_size=(1, 2), bias=False)
 
-
-
-# 構造一個二維摺積層，它具有1個輸出通道和形狀為（1，2）的摺積核
-conv2d = nn.Conv2d(1,1, kernel_size=(1, 2), bias=False)
-
-# 這個二維摺積層使用四維輸入和輸出格式（批次大小、通道、高度、寬度），
+# 這個二維摺積層使用四維輸入和輸出格式(批次大小,通道,高度,寬度),
 # 其中批次大小和通道數都為1
 X = X.reshape((1, 1, 6, 8))
+print(f'X {X}')
 Y = Y.reshape((1, 1, 6, 7))
-lr = 3e-2  # 學習率
+print(f'Y {Y}')
+lr = 0.03  # 學習率
 
-for i in range(10):
+for i in range(100):
     Y_hat = conv2d(X)
-    l = (Y_hat - Y) ** 2
+    # print(f'Y_hat {Y_hat}')
+    lo = (Y_hat - Y)**2
+    # print(f'lo {lo}')
     conv2d.zero_grad()
-    l.sum().backward()
+    lo.sum().backward()
     # 迭代摺積核
     conv2d.weight.data[:] -= lr * conv2d.weight.grad
     if (i + 1) % 2 == 0:
-        print(f'epoch {i+1}, loss {l.sum():.3f}')
+        print(f'epoch {i+1}, loss {lo.sum():.3f}')
+
+K_hat = conv2d.weight.data.reshape((1, 2))
+print(f'K_hat {K_hat}')
