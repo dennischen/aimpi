@@ -45,7 +45,7 @@ def train(lambd: int):
         X: torch.tensor
         y: torch.tensor
         for X, y in train_dataloader:
-            # 增加了L2范數懲罰項，
+            # 增加了L2范數懲罰項,
             # 廣播機制使l2_penalty(w)成為一個長度為batch_size的向量
             lo: torch.Tensor = loss(net(X), y) + lambd * l2_penalty(w)
             lo.sum().backward()

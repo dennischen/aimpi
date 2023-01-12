@@ -73,7 +73,7 @@ def train(train_features: torch.Tensor,
           num_epochs=400):
     loss = nn.MSELoss(reduction='none')
     input_shape = train_features.shape[-1]
-    # 不設定偏置，因為我們已經在多項式中實現了它
+    # 不設定偏置,因為我們已經在多項式中實現了它
     l1 = nn.Linear(input_shape, 1, bias=False)
     net = nn.Sequential(l1)
     batch_size = min(10, train_labels.shape[0])
@@ -95,11 +95,11 @@ def train(train_features: torch.Tensor,
 
 print('true weight:', true_w.data.numpy())
 # poly_features = [n_train + n_test, max_degree]
-# 從多項式特徵中選擇前4個維度，即1,x,x^2/2!,x^3/3!
+# 從多項式特徵中選擇前4個維度,即1,x,x^2/2!,x^3/3!
 train(poly_features[:n_train, :4], poly_features[n_train:, :4], labels[:n_train], labels[n_train:])
 savefig(f'out/{basename_noext(__file__)}.png')
 
-# 從多項式特徵中選擇前2個維度，即1和x
+# 從多項式特徵中選擇前2個維度,即1和x
 train(poly_features[:n_train, :2], poly_features[n_train:, :2], labels[:n_train], labels[n_train:])
 savefig(f'out/{basename_noext(__file__)}_underfit.png')
 

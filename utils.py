@@ -149,7 +149,7 @@ def evaluate_accuracy_gpu(net: Union[Callable[[torch.Tensor], torch.Tensor], nn.
         net.eval()  # 設定為評估模式
         if not device:
             device = next(iter(net.parameters())).device
-    # 正確預測的數量，總預測的數量
+    # 正確預測的數量,總預測的數量
     metric = Accumulator(2)
     with torch.no_grad():
         X: torch.Tensor
@@ -444,7 +444,7 @@ def train_ch6(net: Union[Callable[[torch.Tensor], torch.Tensor], nn.Module], tra
         timer_epoch = Timer()
         timer_epoch.start()
         print(f'start epoch {epoch}, batches {num_batches}')
-        # 訓練損失之和，訓練精準率之和，樣本數
+        # 訓練損失之和,訓練精準率之和,樣本數
         metric = Accumulator(3)
         net.train()  # trun to train mode (because evaluate_accuracy_gpu will trun it to eval)
         X: torch.Tensor

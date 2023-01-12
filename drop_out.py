@@ -17,10 +17,10 @@ torch.set_printoptions(linewidth=200, sci_mode=False, precision=3)
 
 def dropout_layer(X: torch.Tensor, dropout: float):
     assert 0 <= dropout <= 1
-    # 在本情況中，所有元素都被丟棄
+    # 在本情況中,所有元素都被丟棄
     if dropout == 1:
         return torch.zeros_like(X)
-    # 在本情況中，所有元素都被保留
+    # 在本情況中,所有元素都被保留
     if dropout == 0:
         return X
     # 0. or 1.

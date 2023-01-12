@@ -1,13 +1,8 @@
-import math
-from typing import Callable, Union
-
 import numpy as np
 import torch
-from d2l import torch as d2l
 from torch import nn
 
-from utils import (basename_noext, kmp_duplicate_lib_ok, savefig, synthetic_data, evaluate_loss, linreg, squared_loss,
-                   sgd, load_data, load_data_fashion_mnist, train_ani, plot)
+from utils import (basename_noext, kmp_duplicate_lib_ok, savefig, load_data, plot)
 
 import hashlib
 import os
@@ -28,7 +23,7 @@ DATA_URL = 'http://d2l-data.s3-accelerate.amazonaws.com/'
 
 
 def download(name, cache_dir=os.path.join('download-data', 'kaggle')):
-    """下載一個DATA_HUB中的檔案，返回本地檔案名稱"""
+    """下載一個DATA_HUB中的檔案,返回本地檔案名稱"""
     assert name in DATA_HUB, f"{name} 不存在於 {DATA_HUB}"
     url, sha1_hash = DATA_HUB[name]
     os.makedirs(cache_dir, exist_ok=True)
@@ -93,7 +88,7 @@ print('===============concat=============')
 print(all_features.iloc[0:4, :])
 print(all_features.iloc[-4:, :])
 
-# 若無法獲得測試資料，則可根據訓練資料計算均值和標準差
+# 若無法獲得測試資料,則可根據訓練資料計算均值和標準差
 numeric_features_idx = all_features.dtypes[all_features.dtypes != 'object'].index
 
 
@@ -108,13 +103,13 @@ print(all_features.iloc[0:4, :])
 print(all_features.iloc[-4:, :])
 
 print('===============fill na=============')
-# 在標準化資料之後，所有均值消失，因此我們可以將缺失值設定為0
+# 在標準化資料之後,所有均值消失,因此我們可以將缺失值設定為0
 all_features[numeric_features_idx] = all_features[numeric_features_idx].fillna(0)
 print(all_features.iloc[0:4, :])
 print(all_features.iloc[-4:, :])
 
 print('===============add fields for object cloumn=============')
-# “Dummy_na=True”將“na”（缺失值）視為有效的特徵值，並為其建立指示符特徵
+# “Dummy_na=True”將“na”（缺失值）視為有效的特徵值,並為其建立指示符特徵
 all_features = pd.get_dummies(all_features, dummy_na=True)
 print(all_features.iloc[0:4, :])
 print(all_features.iloc[-4:, :])
@@ -137,7 +132,7 @@ def get_net():
 
 
 def log_rmse(net: nn.Module, X: torch.Tensor, y: torch.Tensor):
-    # 為了在取對數時進一步穩定該值，將小於1的值設定為1
+    # 為了在取對數時進一步穩定該值,將小於1的值設定為1
     clipped_preds = torch.clamp(net(X), 1, float('inf'))
     rmse = torch.sqrt(loss(torch.log(clipped_preds), torch.log(y)))
     return rmse.item()
@@ -226,5 +221,4 @@ def train_and_pred(train_features: torch.Tensor, test_features: torch.Tensor, tr
     submission.to_csv(f'out/{basename_noext(__file__)}.csv', index=False)
 
 
-train_and_pred(train_features, test_features, train_labels, test_data,
-               num_epochs, lr, weight_decay, batch_size)    
+train_and_pred(train_features, test_features, train_labels, test_data, num_epochs, lr, weight_decay, batch_size)

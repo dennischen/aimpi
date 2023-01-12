@@ -66,7 +66,7 @@ d2l.plt.savefig(f'out/{basename_noext(__file__)}.png')
 def random_shuffle_iter_data(batch_size, features, labels):
     num = len(features)
     indices = list(range(num))
-    # 這些樣本是隨機讀取的，沒有特定的順序
+    # 這些樣本是隨機讀取的,沒有特定的順序
     random.shuffle(indices)
     if (DEBUG): print(f'indices {indices}')
     # range(from, to, step)
@@ -133,8 +133,8 @@ print(f'>> Initial difference bias: {source_bias - bias}')
 for epoch in range(num_epochs):
     for X, y in random_shuffle_iter_data(batch_size, features, labels):
         batch_loss = loss(network(X, weight, bias), y)  # X和y的小批次損失
-        # 因為l形狀是(batch_size,1)，而不是一個標量。
-        # l中的所有元素被加到一起，
+        # 因為l形狀是(batch_size,1),而不是一個標量。
+        # l中的所有元素被加到一起,
         # 並以此計算關於[w,b]的梯度
 
         # backpropagation

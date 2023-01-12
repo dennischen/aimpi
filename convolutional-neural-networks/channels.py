@@ -12,7 +12,7 @@ def corr2d(X, K):
 
 
 def corr2d_multi_in(X, K):
-    # 先遍歷“X”和“K”的第0個維度（通道維度），再把它們加在一起
+    # 先遍歷“X”和“K”的第0個維度（通道維度）,再把它們加在一起
     return sum(corr2d(x, k) for x, k in zip(X, K))
 
 
@@ -41,7 +41,7 @@ print(f'{corr2d_multi_in(X, K)}')
 
 
 def corr2d_multi_in_out(X, K):
-    # 迭代“K”的第0個維度，每次都對輸入“X”執行互相關運算。
+    # 迭代“K”的第0個維度,每次都對輸入“X”執行互相關運算。
     # 最後將所有結果都疊加在一起
     return torch.stack([corr2d_multi_in(X, k) for k in K], 0)
 

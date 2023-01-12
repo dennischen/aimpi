@@ -4,17 +4,17 @@ from torch.nn import functional as F
 
 
 class MLP(nn.Module):
-    # 用模型參數聲明層。這裡，我們聲明兩個全連接的層
+    # 用模型參數聲明層。這裡,我們聲明兩個全連接的層
     def __init__(self):
         # 呼叫MLP的父類Module的建構函式來執行必要的初始化。
-        # 這樣，在類實例化時也可以指定其他函數參數，例如模型參數params（稍後將介紹）
+        # 這樣,在類實例化時也可以指定其他函數參數,例如模型參數params（稍後將介紹）
         super().__init__()
         self.hidden = nn.Linear(20, 256)  # 隱藏層
         self.out = nn.Linear(256, 10)  # 輸出層
 
-    # 定義模型的前向傳播，即如何根據輸入X返回所需的模型輸出
+    # 定義模型的前向傳播,即如何根據輸入X返回所需的模型輸出
     def forward(self, X):
-        # 注意，這裡我們使用ReLU的函數版本，其在nn.functional模組中定義。
+        # 注意,這裡我們使用ReLU的函數版本,其在nn.functional模組中定義。
         return self.out(F.relu(self.hidden(X)))
 
 
@@ -28,7 +28,7 @@ class MySequential(nn.Module):
     def __init__(self, *args):
         super().__init__()
         for idx, module in enumerate(args):
-            # 這裡，module是Module子類的一個實例。我們把它保存在'Module'類的成員
+            # 這裡,module是Module子類的一個實例。我們把它保存在'Module'類的成員
             # 變數_modules中。_module的類型是OrderedDict
             self._modules[str(idx)] = module
 
