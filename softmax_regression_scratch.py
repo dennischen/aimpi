@@ -7,7 +7,7 @@ from d2l import torch as d2l
 from matplotlib.axes import Axes
 from torch.utils import data
 
-from utils import (basename_noext, get_fashion_mnist_labels, kmp_duplicate_lib_ok, load_data_fashion_minist)
+from utils import (basename_noext, get_fashion_mnist_labels, kmp_duplicate_lib_ok, load_data_fashion_mnist)
 
 
 kmp_duplicate_lib_ok()
@@ -16,7 +16,7 @@ batch_size = 256
 lr = 0.1
 num_epochs = 10
 
-train_dataloader, test_dataloader = load_data_fashion_minist(batch_size)
+train_dataloader, test_dataloader = load_data_fashion_mnist(batch_size)
 
 num_inputs = 784  # 28 x 28
 num_outputs = 10  # 10 category

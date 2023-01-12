@@ -8,7 +8,7 @@ from torch import nn
 from torch.utils import data
 
 from utils import (basename_noext, kmp_duplicate_lib_ok, savefig, synthetic_data, evaluate_loss, linreg, squared_loss,
-                   sgd, load_data, load_data_fashion_minist, train_ani, plot)
+                   sgd, load_data, load_data_fashion_mnist, train_ani, plot)
 
 kmp_duplicate_lib_ok()
 np.set_printoptions(linewidth=200, precision=3)

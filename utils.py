@@ -1,6 +1,8 @@
+import time
 import math
 import os
 from typing import Callable, Union
+import numpy as np
 
 import matplotlib.pyplot as plt
 import numpy
@@ -70,8 +72,13 @@ def sgd(params: tuple[torch.Tensor], lr: float, batch_size: int):
             param.grad.zero_()
 
 
-def load_data_fashion_minist(batch_size: int):
-    trans = transforms.Compose([transforms.ToTensor()])
+def load_data_fashion_mnist(batch_size: int, resize: int = None):
+
+    trans = [transforms.ToTensor()]
+    if resize:
+        trans.insert(0, transforms.Resize(resize))
+    trans = transforms.Compose(trans)
+
     mnist_train = torchvision.datasets.FashionMNIST(root="download-data", train=True, transform=trans, download=True)
     mnist_test = torchvision.datasets.FashionMNIST(root="download-data", train=False, transform=trans, download=True)
 
@@ -129,6 +136,30 @@ def evaluate_accuracy(net: Union[Callable[[torch.Tensor], torch.Tensor], nn.Modu
         y: torch.Tensor
         for X, y in dataloader:
             X = X.to(device)
+            y = y.to(device)
+            metric.add(count_accuracy(net(X), y), y.numel())
+    return metric[0] / metric[1]
+
+
+def evaluate_accuracy_gpu(net: Union[Callable[[torch.Tensor], torch.Tensor], nn.Module],
+                          data_loader: data.DataLoader,
+                          device: torch.device = None):
+    """使用GPU計算模型在資料集上的精度"""
+    if isinstance(net, nn.Module):
+        net.eval()  # 設定為評估模式
+        if not device:
+            device = next(iter(net.parameters())).device
+    # 正確預測的數量，總預測的數量
+    metric = Accumulator(2)
+    with torch.no_grad():
+        X: torch.Tensor
+        y: torch.Tensor
+        for X, y in data_loader:
+            if isinstance(X, list):
+                # BERT微調所需的（之後將介紹）
+                X = [x.to(device) for x in X]
+            else:
+                X = X.to(device)
             y = y.to(device)
             metric.add(count_accuracy(net(X), y), y.numel())
     return metric[0] / metric[1]
@@ -327,8 +358,6 @@ def plot(X: torch.Tensor,
         axes.plot(x, y, fmt) if len(x) else axes.plot(y, fmt)
     set_axes(axes, xlabel, ylabel, xlim, ylim, xscale, yscale, legend)
 
-    
-
 
 def predict(net: nn.Module, test_dataloader: data.DataLoader, number=10, device="cpu"):
     """預測標籤"""
@@ -363,3 +392,81 @@ def try_all_gpus():  #@save
     """返回所有可用的GPU,如果沒有GPU,則返回[cpu(),]"""
     devices = [torch.device(f'cuda:{i}') for i in range(torch.cuda.device_count())]
     return devices if devices else [torch.device('cpu')]
+
+
+class Timer:
+    """Record multiple running times."""
+    def __init__(self):
+        """Defined in :numref:`sec_minibatch_sgd`"""
+        self.times = []
+        self.start()
+
+    def start(self):
+        """Start the timer."""
+        self.tik = time.time()
+
+    def stop(self):
+        """Stop the timer and record the time in a list."""
+        self.times.append(time.time() - self.tik)
+        return self.times[-1]
+
+    def avg(self):
+        """Return the average time."""
+        return sum(self.times) / len(self.times)
+
+    def sum(self):
+        """Return the sum of time."""
+        return sum(self.times)
+
+    def cumsum(self):
+        """Return the accumulated time."""
+        return np.array(self.times).cumsum().tolist()
+
+
+def train_ch6(net: Union[Callable[[torch.Tensor], torch.Tensor], nn.Module], train_dataloader: data.DataLoader,
+              test_dataloader: data.DataLoader, num_epochs: int, lr: float, device: torch.device):
+    """用GPU訓練模型(在第六章定義)"""
+    def init_weights(m):
+        if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
+            nn.init.xavier_uniform_(m.weight)
+
+    net.apply(init_weights)
+    print('training on', device)
+    net.to(device)
+    optimizer = torch.optim.SGD(net.parameters(), lr=lr)
+    loss = nn.CrossEntropyLoss()
+    animator = Animator(xlabel='epoch',
+                        xlim=[1, num_epochs],
+                        legend=['train loss', 'train acc', 'test acc'],
+                        figsize=(5, 5))
+    timer, num_batches = Timer(), len(train_dataloader)
+    for epoch in range(num_epochs):
+        timer_epoch = Timer()
+        timer_epoch.start()
+        print(f'start epoch {epoch}, batches {num_batches}')
+        # 訓練損失之和，訓練精準率之和，樣本數
+        metric = Accumulator(3)
+        net.train()  # trun to train mode (because evaluate_accuracy_gpu will trun it to eval)
+        X: torch.Tensor
+        y: torch.Tensor
+        for i, (X, y) in enumerate(train_dataloader):
+            timer.start()
+            optimizer.zero_grad()
+            X, y = X.to(device), y.to(device)
+            y_hat: torch.Tensor = net(X)
+            lo: torch.Tensor = loss(y_hat, y)
+            lo.backward()
+            optimizer.step()
+            with torch.no_grad():
+                metric.add(lo * X.shape[0], count_accuracy(y_hat, y), X.shape[0])
+            timer.stop()
+            train_lo = metric[0] / metric[2]
+            train_acc = metric[1] / metric[2]
+            if (i + 1) % (num_batches // 5) == 0 or i == num_batches - 1:
+                animator.add(epoch + (i + 1) / num_batches, (train_lo, train_acc, None))
+        test_acc = evaluate_accuracy_gpu(net, test_dataloader)
+        animator.add(epoch + 1, (None, None, test_acc))
+        timer_epoch.stop()
+        print(f'epoch {epoch} tooks {timer_epoch.sum()} sec for {metric[2]} examples')
+    print(f'loss {train_lo:.3f}, train acc {train_acc:.3f}, test acc {test_acc:.3f}')
+    print(f'{metric[2] * num_epochs / timer.sum():.1f} examples/sec on {str(device)}')

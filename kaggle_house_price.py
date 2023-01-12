@@ -7,7 +7,7 @@ from d2l import torch as d2l
 from torch import nn
 
 from utils import (basename_noext, kmp_duplicate_lib_ok, savefig, synthetic_data, evaluate_loss, linreg, squared_loss,
-                   sgd, load_data, load_data_fashion_minist, train_ani, plot)
+                   sgd, load_data, load_data_fashion_mnist, train_ani, plot)
 
 import hashlib
 import os

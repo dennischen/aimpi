@@ -8,7 +8,7 @@ from torch import nn
 from torch.utils import data
 
 from utils import (basename_noext, kmp_duplicate_lib_ok, savefig, synthetic_data, evaluate_loss, linreg, squared_loss,
-                   sgd, load_data, load_data_fashion_minist, train_ani)
+                   sgd, load_data, load_data_fashion_mnist, train_ani)
 
 kmp_duplicate_lib_ok()
 np.set_printoptions(linewidth=200, precision=3)
@@ -75,7 +75,7 @@ net = Net(num_inputs, num_outputs, num_hiddens1, num_hiddens2)
 
 num_epochs, lr, batch_size = 10, 0.5, 256
 loss = nn.CrossEntropyLoss(reduction='none')
-train_dataloader, test_dataloader = load_data_fashion_minist(batch_size)
+train_dataloader, test_dataloader = load_data_fashion_mnist(batch_size)
 trainer = torch.optim.SGD(net.parameters(), lr=lr)
 train_ani(net, train_dataloader, test_dataloader, loss, num_epochs, trainer)
 

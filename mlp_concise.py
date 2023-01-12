@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 from utils import (basename_noext, get_fashion_mnist_labels,
-                   kmp_duplicate_lib_ok, load_data_fashion_minist, predict,
+                   kmp_duplicate_lib_ok, load_data_fashion_mnist, predict,
                    savefig, train_ani)
 
 kmp_duplicate_lib_ok()
@@ -13,7 +13,7 @@ def main():
     num_epochs = 10
     lr = 0.1
 
-    train_dataloader, test_dataloader = load_data_fashion_minist(batch_size)
+    train_dataloader, test_dataloader = load_data_fashion_mnist(batch_size)
 
     net = nn.Sequential(nn.Flatten(),
                         nn.Linear(784, 256, device="cuda"),
