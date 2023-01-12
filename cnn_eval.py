@@ -8,6 +8,8 @@ import torch.utils.data as data
 
 from alexnet import build_dataloader as build_alexnet_dataloader
 from alexnet import build_net as build_alexnet
+from densenet import build_dataloader as build_densenet_dataloader
+from densenet import build_net as build_densenet
 from googlenet import build_dataloader as build_googlenet_dataloader
 from googlenet import build_net as build_googlenet
 from lenet import build_dataloader as build_lenet_dataloader
@@ -26,7 +28,7 @@ def main():
     np.set_printoptions(linewidth=200, precision=3)
     torch.set_printoptions(linewidth=200, sci_mode=False, precision=3)
 
-    num = 10
+    num = 30
 
     def predict(case: str, net: Union[Callable[[torch.Tensor], torch.Tensor], torch.nn.Module],
                 test_dataloader: data.DataLoader, wh: int, device: torch.device):
@@ -45,20 +47,23 @@ def main():
             all += 1
             if (la == pr):
                 hit = hit + 1
-        print(f'{case} accuracy {hit/all:0.1f}')
+        print(f'{case} accuracy {hit/all:0.2f}')
 
         titles = [label + '\n' + pred for label, pred in zip(labels, preds)]
         n = len(X)
-        show_images(X.reshape(n, wh, wh), 1, n, titles=titles)
+        col = min(num, 10)
+        row = num // col
+        show_images(X.reshape(n, wh, wh), row, col, titles=titles)
         savefig(f'out/predict_{case}.png')
 
     cases: list[tuple[str, Callable[[], nn.Module], Callable[[int], tuple[data.DataLoader, data.DataLoader, int]]]] = []
     cases.append(('lenet', build_lenet, build_lenet_dataloader))
     cases.append(('alexnet', build_alexnet, build_alexnet_dataloader))
     cases.append(('googlenet', build_googlenet, build_googlenet_dataloader))
-    cases.append(('resnet', build_resnet, build_resnet_dataloader))
     cases.append(('nin', build_nin, build_nin_dataloader))
     cases.append(('vgg', build_vgg, build_vgg_dataloader))
+    cases.append(('resnet', build_resnet, build_resnet_dataloader))
+    cases.append(('densenet', build_densenet, build_densenet_dataloader))
 
     device = try_gpu()
 
