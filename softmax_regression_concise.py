@@ -5,12 +5,19 @@ from utils import (basename_noext, get_fashion_mnist_labels,
                    savefig, train_ani)
 
 kmp_duplicate_lib_ok()
+torch.set_printoptions(linewidth=200, sci_mode=False, precision=3, threshold=100)
 
 batch_size = 256
 lr = 0.1
 num_epochs = 10
 
 train_dataloader, test_dataloader = load_data_fashion_mnist(batch_size)
+
+
+for X, y in train_dataloader:
+    print('train_dataloader X', X.shape)
+    print('train_dataloader y', y.shape)
+    break
 
 # Flatten makes 28x28 to 784
 net = nn.Sequential(nn.Flatten(), nn.Linear(784, 10))

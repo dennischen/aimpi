@@ -7,6 +7,7 @@ from d2l import torch as d2l
 from utils import basename_noext, kmp_duplicate_lib_ok
 
 kmp_duplicate_lib_ok()
+torch.set_printoptions(linewidth=200, sci_mode=False, precision=3, threshold=100)
 
 DEBUG = False
 num_examples = 1000
@@ -20,12 +21,17 @@ features: torch.Tensor
 labels: torch.Tensor
 features, labels = d2l.synthetic_data(source_weight, source_bias, num_examples)
 
+# [1000, 2]
+print('features', features.shape, features)
+# [1000, 1]
+print('labels', labels.shape, labels)
+
 d2l.set_figsize()
 d2l.plt.scatter(features[:, 1].detach().numpy(), labels.detach().numpy(), 1)
 d2l.plt.savefig(f'out/{basename_noext(__file__)}.png')
 
 
-def data_loader(data_arrays, batch_size, is_train=True):
+def load_data(data_arrays, batch_size, is_train=True):
     """構造一個PyTorch資料迭代器"""
     dataset = data.TensorDataset(*data_arrays)
     return data.DataLoader(dataset, batch_size, shuffle=is_train)
@@ -34,9 +40,9 @@ def data_loader(data_arrays, batch_size, is_train=True):
 batch_size = 10
 lr = 0.03
 num_epochs = 3
-iter_data = data_loader((features, labels), batch_size)
+dataloader = load_data((features, labels), batch_size)
 
-# define a 2 inputs > 1 output network
+# define a 2 inputs > 1 output net
 l1 = nn.Linear(2, 1)
 # inintal layer
 
@@ -80,7 +86,7 @@ b = l1.bias.data
 print(f'initial different bias: {source_bias - b}')
 
 for epoch in range(num_epochs):
-    for X, y in iter_data:
+    for X, y in dataloader:
         # ==the scratch way==
         # batch_loss = squared_loss(net(X), y)
         # batch_loss.sum().backward()

@@ -5,6 +5,7 @@ from d2l import torch as d2l
 from utils import basename_noext, kmp_duplicate_lib_ok
 
 kmp_duplicate_lib_ok()
+torch.set_printoptions(linewidth=200, sci_mode=False, precision=3, threshold=100)
 
 DEBUG = False
 # generate training data from a source w,b
@@ -56,6 +57,11 @@ def generate_simuliation_data(src_w: torch.Tensor, src_b: float, num: int):
 # generate the X and y for training simulation from source
 features, labels = generate_simuliation_data(source_weight, source_bias, num_examples)
 
+# [1000, 2]
+print('features', features.shape, features)
+# [1000, 1]
+print('labels', labels.shape, labels)
+
 if (DEBUG): print(f'>> Generated training data: \n>> Features {features}\n>> Labels:{labels}')
 
 d2l.set_figsize()
@@ -81,21 +87,33 @@ def random_shuffle_iter_data(batch_size, features, labels):
 batch_size = 10
 # random features, labels to a batch iteration
 iter_data = random_shuffle_iter_data(batch_size, features, labels)
-for idx, (X, y) in enumerate(iter_data):
-    if (DEBUG):
-        print(f'Batch {idx}: {X}, {y}')
+for X, y in iter_data:
+    print('iter_data X', X.shape)
+    print('iter_data y', y.shape)
+    break
 
 
 # Start training
 # define training method
 def linreg(X: torch.Tensor, w: torch.Tensor, b: torch.Tensor):
     """線性回歸模型"""
-    return torch.matmul(X, w) + b
+    y = torch.matmul(X, w) + b
+    print('linreg===================>')
+    print('X', X.shape)
+    print('w', w.shape)
+    print('b', b.shape)
+    print('y', y.shape)
+    return y
 
 
 def squared_loss(y_hat: torch.Tensor, y: torch.Tensor):
     """均方損失"""
-    return (y_hat - y.reshape(y_hat.shape))**2 / 2
+    lo = (y_hat - y.reshape(y_hat.shape))**2 / 2
+    print('lo===================>')
+    print('y_hat', y_hat.shape)
+    print('y', y.shape)
+    print('lo', lo.shape)
+    return lo
 
 
 def sgd(params: tuple[torch.Tensor], lr: float, batch_size: int):
@@ -119,20 +137,21 @@ print(f'>> Initialized bias: {bias}')
 batch_size = 10
 lr = 0.03
 num_epochs = 3
-network = linreg
+net = linreg
 loss = squared_loss
 optimize = sgd
 
 with torch.no_grad():
-    train_loss = loss(network(features, weight, bias), labels)
+    label_hat = net(features, weight, bias)
+    train_loss = loss(label_hat, labels)
     print(f'>> Initial loss {float(train_loss.mean()):f}')
 
 print(f'>> Initial difference weight: {source_weight - weight.reshape(source_weight.shape)}')
 print(f'>> Initial difference bias: {source_bias - bias}')
 
 for epoch in range(num_epochs):
-    for X, y in random_shuffle_iter_data(batch_size, features, labels):
-        batch_loss = loss(network(X, weight, bias), y)  # X和y的小批次損失
+    for X, label_hat in random_shuffle_iter_data(batch_size, features, labels):
+        batch_loss = loss(net(X, weight, bias), label_hat)  # X和y的小批次損失
         # 因為l形狀是(batch_size,1),而不是一個標量。
         # l中的所有元素被加到一起,
         # 並以此計算關於[w,b]的梯度
@@ -141,7 +160,7 @@ for epoch in range(num_epochs):
         batch_loss.sum().backward()
         optimize([weight, bias], lr, batch_size)  # 使用參數的梯度更新參數
     with torch.no_grad():
-        train_loss = loss(network(features, weight, bias), labels)
+        train_loss = loss(net(features, weight, bias), labels)
         print(f'epoch {epoch + 1}, loss {float(train_loss.mean()):f}')
 
 print(f'>> weight difference from source: {source_weight - weight.reshape(source_weight.shape)}')

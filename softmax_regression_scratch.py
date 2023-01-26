@@ -9,14 +9,19 @@ from torch.utils import data
 
 from utils import (basename_noext, get_fashion_mnist_labels, kmp_duplicate_lib_ok, load_data_fashion_mnist)
 
-
 kmp_duplicate_lib_ok()
+torch.set_printoptions(linewidth=200, sci_mode=False, precision=3, threshold=100)
 
 batch_size = 256
 lr = 0.1
 num_epochs = 10
 
 train_dataloader, test_dataloader = load_data_fashion_mnist(batch_size)
+
+for X, y in train_dataloader:
+    print('train_dataloader X', X.shape)
+    print('train_dataloader y', y.shape)
+    break
 
 num_inputs = 784  # 28 x 28
 num_outputs = 10  # 10 category
@@ -44,7 +49,8 @@ test_softmax()
 ######################################
 def net(X: torch.Tensor):
     """The net"""
-    return softmax(torch.matmul(X.reshape((-1, W.shape[0])), W) + b)
+    y = softmax(torch.matmul(X.reshape((-1, W.shape[0])), W) + b)
+    return y
 
 
 ######################################
