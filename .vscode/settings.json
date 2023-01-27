@@ -4,8 +4,9 @@
         "--max-line-length=120",
         "--ignore=E701, E302, E303, W391, W292"
     ],
-    "python.formatting.provider": "yapf",
-    "python.formatting.yapfArgs": [
-        "--style={column_limit=120}"
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": [
+        "--line-length",
+        "120"
     ],
 }
